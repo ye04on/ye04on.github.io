@@ -8,311 +8,454 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #f5f5f5;
+      background: #111;
+      color: #fff;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 24px 16px;
-      gap: 16px;
-      min-height: 100vh;
+      justify-content: flex-start;
+      padding: 0;
     }
-    h1 { font-size: 18px; font-weight: 500; letter-spacing: 0.05em; color: #222; }
-    #sticker-btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-    #sticker-btns button {
-      font-size: 20px; padding: 8px 12px;
-      border-radius: 10px; border: 1.5px solid #ddd;
-      background: #fff; cursor: pointer; transition: border-color 0.15s;
+
+    /* ── SCREENS ── */
+    .screen { display: none; flex-direction: column; align-items: center; width: 100%; min-height: 100vh; }
+    .screen.active { display: flex; }
+
+    /* ── INTRO ── */
+    #screen-intro {
+      justify-content: center;
+      gap: 24px;
+      padding: 40px 24px;
     }
-    #sticker-btns button.active { border-color: #7F77DD; background: #EEEDFE; }
-    #main-layout { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; justify-content: center; }
+    #screen-intro h1 { font-size: 28px; font-weight: 600; letter-spacing: 0.06em; }
+    #screen-intro p { font-size: 14px; color: #888; text-align: center; line-height: 1.7; }
+    .btn-main {
+      padding: 14px 40px; border-radius: 999px;
+      background: #fff; color: #111;
+      font-size: 15px; font-weight: 600;
+      border: none; cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-main:hover { opacity: 0.85; }
+
+    /* ── SHOOT ── */
+    #screen-shoot {
+      padding: 0;
+      justify-content: flex-start;
+      gap: 0;
+      background: #000;
+    }
     #cam-wrap {
-      position: relative; width: 320px; height: 240px;
-      border-radius: 12px; overflow: hidden;
-      border: 1px solid #ddd; background: #e8e8e8;
+      position: relative;
+      width: 100%;
+      max-width: 480px;
+      aspect-ratio: 4/3;
+      background: #000;
+      overflow: hidden;
     }
-    video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: block; }
-    #overlay-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+    video {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+      display: block;
+    }
+    #overlay-canvas {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+    }
     #countdown {
-      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      font-size: 72px; font-weight: 700; color: #fff;
-      text-shadow: 0 2px 12px rgba(0,0,0,0.5); display: none; z-index: 10;
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 96px; font-weight: 700; color: #fff;
+      text-shadow: 0 2px 20px rgba(0,0,0,0.6);
+      display: none; z-index: 10;
     }
-    #flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 9; }
-    #strip-wrap {
-      display: flex; flex-direction: column; gap: 4px;
-      padding: 10px; background: #fff; border-radius: 10px;
-      border: 1px solid #ddd;
+    #flash {
+      position: absolute; inset: 0;
+      background: #fff; opacity: 0;
+      pointer-events: none; z-index: 9;
     }
-    .strip-label { font-size: 9px; color: #bbb; text-align: center; letter-spacing: 0.12em; font-weight: 600; margin-bottom: 2px; }
-    .thumb {
-      width: 140px; height: 105px; border-radius: 6px;
-      background: #f0f0f0; display: flex; align-items: center;
-      justify-content: center; overflow: hidden;
+
+    /* shot counter dots */
+    #dot-wrap {
+      display: flex; gap: 10px;
+      padding: 16px 0 8px;
     }
-    .thumb img { width: 100%; height: 100%; object-fit: cover; }
-    .thumb-empty { color: #ccc; font-size: 20px; }
-    #controls { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-    #controls button {
-      font-size: 13px; padding: 10px 20px; border-radius: 10px;
-      cursor: pointer; border: 1px solid #ddd; background: #fff; color: #222;
-      transition: background 0.1s;
+    .dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #444; transition: background 0.2s;
     }
-    #controls button:hover { background: #f5f5f5; }
-    #shoot-btn { background: #222 !important; color: #fff !important; border-color: #222 !important; font-weight: 500; }
-    #shoot-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-    #download-btn { background: #7F77DD !important; color: #fff !important; border-color: #7F77DD !important; display: none; }
-    #reset-btn { display: none; }
-    #status { font-size: 12px; color: #888; text-align: center; min-height: 18px; }
+    .dot.done { background: #fff; }
+    .dot.active { background: #aaa; }
+
+    #shoot-status {
+      font-size: 13px; color: #888;
+      padding-bottom: 12px;
+      min-height: 20px;
+    }
+
+    /* sticker row */
+    #sticker-btns {
+      display: flex; gap: 8px;
+      padding: 0 0 12px;
+    }
+    #sticker-btns button {
+      font-size: 22px; padding: 8px 12px;
+      border-radius: 10px;
+      border: 1.5px solid #333;
+      background: #1a1a1a; cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    #sticker-btns button.active {
+      border-color: #7F77DD;
+      background: #2a2060;
+    }
+
+    /* shutter */
+    #shutter-btn {
+      width: 70px; height: 70px; border-radius: 50%;
+      border: 3px solid #fff;
+      background: transparent;
+      cursor: pointer;
+      position: relative;
+      margin-bottom: 32px;
+      transition: transform 0.1s;
+    }
+    #shutter-btn:active { transform: scale(0.94); }
+    #shutter-btn::after {
+      content: '';
+      position: absolute; inset: 6px;
+      border-radius: 50%;
+      background: #fff;
+    }
+    #shutter-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    /* ── RESULT ── */
+    #screen-result {
+      padding: 32px 24px;
+      gap: 24px;
+      justify-content: flex-start;
+      align-items: center;
+      background: #111;
+    }
+    #screen-result h2 { font-size: 16px; font-weight: 500; letter-spacing: 0.08em; color: #aaa; }
+
+    #strip-outer {
+      background: #fff;
+      padding: 12px 12px 20px;
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      width: 220px;
+    }
+    #strip-outer .strip-photo {
+      width: 196px;
+      height: 147px;
+      background: #eee;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    #strip-outer .strip-photo img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    #strip-label {
+      font-size: 9px;
+      color: #bbb;
+      text-align: center;
+      letter-spacing: 0.14em;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    .result-btns { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+    .btn-sub {
+      padding: 11px 24px; border-radius: 999px;
+      font-size: 14px; font-weight: 500;
+      border: 1.5px solid #444;
+      background: transparent; color: #fff;
+      cursor: pointer; transition: border-color 0.15s;
+    }
+    .btn-sub:hover { border-color: #888; }
+    .btn-dl {
+      border-color: #fff; background: #fff; color: #111;
+    }
+    .btn-dl:hover { opacity: 0.85; }
   </style>
 </head>
 <body>
 
-  <h1>AR 인생네컷 📸</h1>
+<!-- INTRO -->
+<div id="screen-intro" class="screen active">
+  <h1>인생네컷 📸</h1>
+  <p>스티커를 고르고<br>셔터를 4번 눌러보세요</p>
+  <button class="btn-main" id="start-btn">시작하기</button>
+</div>
+
+<!-- SHOOT -->
+<div id="screen-shoot" class="screen">
+  <div id="cam-wrap">
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="overlay-canvas"></canvas>
+    <div id="countdown"></div>
+    <div id="flash"></div>
+  </div>
+
+  <div id="dot-wrap">
+    <div class="dot active" id="d0"></div>
+    <div class="dot" id="d1"></div>
+    <div class="dot" id="d2"></div>
+    <div class="dot" id="d3"></div>
+  </div>
+
+  <div id="shoot-status">1번째 사진을 찍어보세요</div>
 
   <div id="sticker-btns">
-    <button data-sticker="none" class="active" title="없음">✕</button>
-    <button data-sticker="crown" title="왕관">👑</button>
-    <button data-sticker="hud" title="게임 HUD">🎮</button>
-    <button data-sticker="star" title="별">⭐</button>
-    <button data-sticker="heart" title="하트">💖</button>
+    <button data-sticker="none" class="active">✕</button>
+    <button data-sticker="crown">👑</button>
+    <button data-sticker="hud">🎮</button>
+    <button data-sticker="star">⭐</button>
+    <button data-sticker="heart">💖</button>
   </div>
 
-  <div id="main-layout">
-    <div id="cam-wrap">
-      <video id="video" autoplay playsinline muted></video>
-      <canvas id="overlay-canvas"></canvas>
-      <div id="countdown"></div>
-      <div id="flash"></div>
-    </div>
+  <button id="shutter-btn" disabled></button>
+</div>
 
-    <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
-      <div class="strip-label">PHOTO STRIP</div>
-      <div id="strip-wrap">
-        <div class="thumb" id="t0"><span class="thumb-empty">1</span></div>
-        <div class="thumb" id="t1"><span class="thumb-empty">2</span></div>
-        <div class="thumb" id="t2"><span class="thumb-empty">3</span></div>
-        <div class="thumb" id="t3"><span class="thumb-empty">4</span></div>
-      </div>
-    </div>
+<!-- RESULT -->
+<div id="screen-result" class="screen">
+  <h2>PHOTO STRIP</h2>
+  <div id="strip-outer">
+    <div class="strip-photo" id="r0"></div>
+    <div class="strip-photo" id="r1"></div>
+    <div class="strip-photo" id="r2"></div>
+    <div class="strip-photo" id="r3"></div>
+    <div id="strip-label">✦ LIFE FOUR CUT ✦</div>
   </div>
-
-  <div id="status">카메라 켜기 버튼을 눌러주세요</div>
-
-  <div id="controls">
-    <button id="start-btn">카메라 켜기</button>
-    <button id="shoot-btn" disabled>📸 촬영 (<span id="shot-count">0</span>/4)</button>
-    <button id="download-btn">💾 저장하기</button>
-    <button id="reset-btn">🔄 다시찍기</button>
+  <div class="result-btns">
+    <button class="btn-sub btn-dl" id="download-btn">💾 저장하기</button>
+    <button class="btn-sub" id="retry-btn">🔄 다시찍기</button>
   </div>
+</div>
 
-  <canvas id="hidden-canvas" style="display:none;"></canvas>
+<canvas id="hidden-canvas" style="display:none;"></canvas>
 
-  <script>
-    const video = document.getElementById('video');
-    const overlayCanvas = document.getElementById('overlay-canvas');
-    const oc = overlayCanvas.getContext('2d');
-    const hiddenCanvas = document.getElementById('hidden-canvas');
-    const hc = hiddenCanvas.getContext('2d');
-    const countdownEl = document.getElementById('countdown');
-    const flashEl = document.getElementById('flash');
-    const statusEl = document.getElementById('status');
-    const shotCountEl = document.getElementById('shot-count');
+<script>
+  const video = document.getElementById('video');
+  const overlayCanvas = document.getElementById('overlay-canvas');
+  const oc = overlayCanvas.getContext('2d');
+  const hiddenCanvas = document.getElementById('hidden-canvas');
+  const hc = hiddenCanvas.getContext('2d');
 
-    let stream = null;
-    let selectedSticker = 'none';
-    let shots = [];
-    let shooting = false;
-    let animId = null;
+  let stream, selectedSticker = 'none', shots = [], shooting = false, animId;
 
-    const STICKERS = {
-      none: null,
-      crown: { emoji: '👑', x: 0.5, y: 0.05, size: 0.22 },
-      star:  { emoji: '⭐', x: 0.15, y: 0.1,  size: 0.14 },
-      heart: { emoji: '💖', x: 0.82, y: 0.08, size: 0.14 },
-    };
+  const STICKERS = {
+    crown: { emoji: '👑', x: 0.5, y: 0.04, size: 0.22 },
+    star:  { emoji: '⭐', x: 0.15, y: 0.08, size: 0.14 },
+    heart: { emoji: '💖', x: 0.82, y: 0.07, size: 0.14 },
+  };
 
-    document.querySelectorAll('#sticker-btns button').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#sticker-btns button').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        selectedSticker = btn.dataset.sticker;
-      });
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  // INTRO → SHOOT
+  document.getElementById('start-btn').addEventListener('click', async () => {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+      video.srcObject = stream;
+      video.onloadedmetadata = () => {
+        overlayCanvas.width = video.videoWidth || 480;
+        overlayCanvas.height = video.videoHeight || 360;
+        hiddenCanvas.width = video.videoWidth || 480;
+        hiddenCanvas.height = video.videoHeight || 360;
+        startOverlay();
+        document.getElementById('shutter-btn').disabled = false;
+      };
+      showScreen('screen-shoot');
+    } catch(e) {
+      alert('카메라 접근이 거부됐어요. 브라우저 설정을 확인해주세요.');
+    }
+  });
+
+  // sticker select
+  document.querySelectorAll('#sticker-btns button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#sticker-btns button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedSticker = btn.dataset.sticker;
     });
+  });
 
-    document.getElementById('start-btn').addEventListener('click', async () => {
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
-        video.srcObject = stream;
-        video.onloadedmetadata = () => {
-          overlayCanvas.width = video.videoWidth || 320;
-          overlayCanvas.height = video.videoHeight || 240;
-          hiddenCanvas.width = video.videoWidth || 320;
-          hiddenCanvas.height = video.videoHeight || 240;
-          startOverlay();
-        };
-        document.getElementById('start-btn').disabled = true;
-        document.getElementById('shoot-btn').disabled = false;
-        statusEl.textContent = '준비 완료! 📸 버튼으로 촬영하세요';
-      } catch(e) {
-        statusEl.textContent = '카메라 접근이 거부됐어요. 브라우저 설정을 확인해주세요.';
-      }
-    });
+  // shutter
+  document.getElementById('shutter-btn').addEventListener('click', () => {
+    if (shooting || shots.length >= 4) return;
+    runCountdown();
+  });
 
-    document.getElementById('shoot-btn').addEventListener('click', () => {
-      if (shooting || shots.length >= 4) return;
-      runCountdown();
-    });
-
-    document.getElementById('download-btn').addEventListener('click', downloadStrip);
-    document.getElementById('reset-btn').addEventListener('click', reset);
-
-    function startOverlay() {
-      function loop() {
-        if (!video.videoWidth) { animId = requestAnimationFrame(loop); return; }
-        oc.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-        drawSticker(oc, overlayCanvas.width, overlayCanvas.height);
-        animId = requestAnimationFrame(loop);
-      }
-      loop();
+  // retry
+  document.getElementById('retry-btn').addEventListener('click', () => {
+    shots = [];
+    for (let i = 0; i < 4; i++) {
+      document.getElementById(`d${i}`).className = 'dot' + (i === 0 ? ' active' : '');
+      document.getElementById(`r${i}`).innerHTML = '';
     }
-
-    function drawSticker(ctx, w, h) {
-      if (selectedSticker === 'hud') { drawHUD(ctx, w, h); return; }
-      const s = STICKERS[selectedSticker];
-      if (!s) return;
-      ctx.save();
-      const size = s.size * w;
-      ctx.font = `${size}px serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-      ctx.fillText(s.emoji, s.x * w, s.y * h);
-      ctx.restore();
-    }
-
-    function drawHUD(ctx, w, h) {
-      ctx.save();
-      ctx.strokeStyle = 'rgba(80,255,180,0.9)';
-      ctx.fillStyle = 'rgba(80,255,180,0.9)';
-      ctx.lineWidth = 1.5;
-      ctx.font = '11px monospace';
-
-      const corners = [
-        [16, 16, 1, 1], [w-16, 16, -1, 1],
-        [16, h-16, 1, -1], [w-16, h-16, -1, -1],
-      ];
-      corners.forEach(([cx, cy, dx, dy]) => {
-        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + dx*20, cy); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, cy + dy*20); ctx.stroke();
-      });
-
-      ctx.globalAlpha = 0.75;
-      ctx.fillText('HP ████████░░ 80%', 24, h - 34);
-      ctx.fillText('LV.99', w - 55, 18);
-
-      ctx.globalAlpha = 0.45;
-      ctx.strokeStyle = 'rgba(80,255,180,0.5)';
-      ctx.lineWidth = 0.5;
-      ctx.strokeRect(w/2 - 28, h/2 - 28, 56, 56);
-      ctx.beginPath(); ctx.moveTo(w/2 - 8, h/2); ctx.lineTo(w/2 + 8, h/2); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(w/2, h/2 - 8); ctx.lineTo(w/2, h/2 + 8); ctx.stroke();
-      ctx.restore();
-    }
-
-    function runCountdown() {
-      shooting = true;
-      document.getElementById('shoot-btn').disabled = true;
-      let n = 3;
-      countdownEl.style.display = 'block';
-      countdownEl.textContent = n;
-      const interval = setInterval(() => {
-        n--;
-        if (n > 0) {
-          countdownEl.textContent = n;
-        } else {
-          clearInterval(interval);
-          countdownEl.style.display = 'none';
-          captureFrame();
-        }
-      }, 900);
-    }
-
-    function captureFrame() {
-      const w = video.videoWidth || 320;
-      const h = video.videoHeight || 240;
-      hiddenCanvas.width = w; hiddenCanvas.height = h;
-      hc.save();
-      hc.translate(w, 0); hc.scale(-1, 1);
-      hc.drawImage(video, 0, 0, w, h);
-      hc.restore();
-      drawSticker(hc, w, h);
-
-      flashEl.style.transition = 'opacity 0.05s';
-      flashEl.style.opacity = '0.9';
-      setTimeout(() => { flashEl.style.transition = 'opacity 0.3s'; flashEl.style.opacity = '0'; }, 80);
-
-      const dataURL = hiddenCanvas.toDataURL('image/jpeg', 0.92);
-      shots.push(dataURL);
-
-      const thumb = document.getElementById(`t${shots.length - 1}`);
-      thumb.innerHTML = '';
-      const img = document.createElement('img');
-      img.src = dataURL; thumb.appendChild(img);
-
-      shotCountEl.textContent = shots.length;
-      shooting = false;
-
-      if (shots.length < 4) {
-        statusEl.textContent = `${shots.length}컷 완료! ${4 - shots.length}컷 더 찍어보세요`;
-        document.getElementById('shoot-btn').disabled = false;
-      } else {
-        statusEl.textContent = '4컷 완성! 저장 버튼을 눌러보세요 🎉';
-        document.getElementById('shoot-btn').disabled = true;
-        document.getElementById('download-btn').style.display = '';
-        document.getElementById('reset-btn').style.display = '';
-        if (stream) stream.getTracks().forEach(t => t.stop());
-        if (animId) cancelAnimationFrame(animId);
-      }
-    }
-
-    function downloadStrip() {
-      if (shots.length < 4) return;
-      const fw = 160, fh = 120, pad = 6, border = 16;
-      const sc = document.createElement('canvas');
-      sc.width = fw + border * 2;
-      sc.height = (fh * 4) + (pad * 3) + border * 2 + 24;
-      const sctx = sc.getContext('2d');
-      sctx.fillStyle = '#fff';
-      sctx.fillRect(0, 0, sc.width, sc.height);
-      const promises = shots.map((src, i) => new Promise(res => {
-        const img = new Image();
-        img.onload = () => { sctx.drawImage(img, border, border + i * (fh + pad), fw, fh); res(); };
-        img.src = src;
-      }));
-      Promise.all(promises).then(() => {
-        sctx.fillStyle = '#bbb';
-        sctx.font = '9px monospace';
-        sctx.textAlign = 'center';
-        sctx.fillText('PHOTO STRIP', sc.width / 2, sc.height - 6);
-        const a = document.createElement('a');
-        a.download = 'photostrip.jpg';
-        a.href = sc.toDataURL('image/jpeg', 0.95);
-        a.click();
+    document.getElementById('shoot-status').textContent = '1번째 사진을 찍어보세요';
+    document.getElementById('shutter-btn').disabled = false;
+    showScreen('screen-shoot');
+    startOverlay();
+    if (!stream || stream.getTracks()[0].readyState === 'ended') {
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false }).then(s => {
+        stream = s; video.srcObject = s;
       });
     }
+  });
 
-    function reset() {
-      shots = [];
-      shotCountEl.textContent = '0';
-      for (let i = 0; i < 4; i++) {
-        document.getElementById(`t${i}`).innerHTML = `<span class="thumb-empty">${i+1}</span>`;
+  // download
+  document.getElementById('download-btn').addEventListener('click', downloadStrip);
+
+  // overlay loop
+  function startOverlay() {
+    if (animId) cancelAnimationFrame(animId);
+    function loop() {
+      if (!video.videoWidth) { animId = requestAnimationFrame(loop); return; }
+      oc.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+      drawSticker(oc, overlayCanvas.width, overlayCanvas.height);
+      animId = requestAnimationFrame(loop);
+    }
+    loop();
+  }
+
+  function drawSticker(ctx, w, h) {
+    if (selectedSticker === 'hud') { drawHUD(ctx, w, h); return; }
+    const s = STICKERS[selectedSticker];
+    if (!s) return;
+    ctx.save();
+    ctx.font = `${s.size * w}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(s.emoji, s.x * w, s.y * h);
+    ctx.restore();
+  }
+
+  function drawHUD(ctx, w, h) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(80,255,180,0.9)';
+    ctx.fillStyle  = 'rgba(80,255,180,0.9)';
+    ctx.lineWidth = 1.5;
+    ctx.font = '11px monospace';
+    [[16,16,1,1],[w-16,16,-1,1],[16,h-16,1,-1],[w-16,h-16,-1,-1]].forEach(([cx,cy,dx,dy]) => {
+      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+dx*22,cy); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx,cy+dy*22); ctx.stroke();
+    });
+    ctx.globalAlpha = 0.8;
+    ctx.fillText('HP ████████░░ 80%', 24, h - 34);
+    ctx.fillText('LV.99', w - 55, 18);
+    ctx.globalAlpha = 0.4;
+    ctx.strokeStyle = 'rgba(80,255,180,0.5)';
+    ctx.lineWidth = 0.5;
+    ctx.strokeRect(w/2-28, h/2-28, 56, 56);
+    ctx.beginPath(); ctx.moveTo(w/2-8,h/2); ctx.lineTo(w/2+8,h/2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(w/2,h/2-8); ctx.lineTo(w/2,h/2+8); ctx.stroke();
+    ctx.restore();
+  }
+
+  function runCountdown() {
+    shooting = true;
+    document.getElementById('shutter-btn').disabled = true;
+    const el = document.getElementById('countdown');
+    let n = 3;
+    el.style.display = 'block';
+    el.textContent = n;
+    const iv = setInterval(() => {
+      n--;
+      if (n > 0) { el.textContent = n; }
+      else {
+        clearInterval(iv);
+        el.style.display = 'none';
+        captureFrame();
       }
-      document.getElementById('download-btn').style.display = 'none';
-      document.getElementById('reset-btn').style.display = 'none';
-      document.getElementById('start-btn').disabled = false;
-      document.getElementById('shoot-btn').disabled = true;
-      statusEl.textContent = '카메라 켜기 버튼을 눌러주세요';
+    }, 900);
+  }
+
+  function captureFrame() {
+    const w = video.videoWidth || 480, h = video.videoHeight || 360;
+    hiddenCanvas.width = w; hiddenCanvas.height = h;
+    hc.save();
+    hc.translate(w, 0); hc.scale(-1, 1);
+    hc.drawImage(video, 0, 0, w, h);
+    hc.restore();
+    drawSticker(hc, w, h);
+
+    const flash = document.getElementById('flash');
+    flash.style.transition = 'opacity 0.05s';
+    flash.style.opacity = '0.9';
+    setTimeout(() => { flash.style.transition = 'opacity 0.3s'; flash.style.opacity = '0'; }, 80);
+
+    const dataURL = hiddenCanvas.toDataURL('image/jpeg', 0.92);
+    shots.push(dataURL);
+
+    // update dots
+    const idx = shots.length - 1;
+    document.getElementById(`d${idx}`).className = 'dot done';
+    if (shots.length < 4) {
+      document.getElementById(`d${shots.length}`).className = 'dot active';
+    }
+
+    shooting = false;
+
+    if (shots.length < 4) {
+      const labels = ['', '2번째', '3번째', '4번째'];
+      document.getElementById('shoot-status').textContent = `${labels[shots.length]} 사진을 찍어보세요`;
+      document.getElementById('shutter-btn').disabled = false;
+    } else {
+      document.getElementById('shoot-status').textContent = '완성! 잠시만요...';
       if (animId) cancelAnimationFrame(animId);
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      setTimeout(showResult, 400);
     }
-  </script>
+  }
+
+  function showResult() {
+    shots.forEach((src, i) => {
+      const div = document.getElementById(`r${i}`);
+      div.innerHTML = '';
+      const img = document.createElement('img');
+      img.src = src;
+      div.appendChild(img);
+    });
+    showScreen('screen-result');
+  }
+
+  function downloadStrip() {
+    const fw = 392, fh = 294, pad = 12, borderH = 24, bottomH = 32;
+    const sc = document.createElement('canvas');
+    sc.width = fw + borderH * 2;
+    sc.height = fh * 4 + pad * 3 + borderH * 2 + bottomH;
+    const sctx = sc.getContext('2d');
+    sctx.fillStyle = '#fff';
+    sctx.fillRect(0, 0, sc.width, sc.height);
+
+    Promise.all(shots.map((src, i) => new Promise(res => {
+      const img = new Image();
+      img.onload = () => {
+        sctx.drawImage(img, borderH, borderH + i * (fh + pad), fw, fh);
+        res();
+      };
+      img.src = src;
+    }))).then(() => {
+      sctx.fillStyle = '#bbb';
+      sctx.font = '700 11px monospace';
+      sctx.textAlign = 'center';
+      sctx.fillText('✦  LIFE FOUR CUT  ✦', sc.width / 2, sc.height - 10);
+      const a = document.createElement('a');
+      a.download = 'life-four-cut.jpg';
+      a.href = sc.toDataURL('image/jpeg', 0.95);
+      a.click();
+    });
+  }
+</script>
 </body>
 </html>
