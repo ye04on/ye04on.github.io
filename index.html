@@ -33,7 +33,7 @@
         ),
         linear-gradient(180deg, #ffd6dd 0%, #ff97a3 100%);
     }
-    .intro-img { width: 90%; max-width: 420px; height: auto; display: block; }
+    .intro-img { width: min(90vw, 70vh); max-width: 600px; height: auto; display: block; }
     .btn-main {
       padding: 14px 40px; border-radius: 999px;
       background: #fff; color: #111;
@@ -135,10 +135,10 @@
 <div id="screen-result" class="screen">
   <div id="strip-container">
     <div id="photos-layer">
-      <div class="photo-slot" id="s0" style="left: calc(85.5/480*100%); top: calc(48.5/1460*100%); width: calc(363/480*100%); height: calc(291/1460*100%); border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;"></div>
-      <div class="photo-slot" id="s1" style="left: calc(54/480*100%); top: calc(365/1460*100%); width: calc(363/480*100%); height: calc(292/1460*100%); border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;"></div>
-      <div class="photo-slot" id="s2" style="left: calc(92.5/480*100%); top: calc(682.5/1460*100%); width: calc(363/480*100%); height: calc(293/1460*100%); border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;"></div>
-      <div class="photo-slot" id="s3" style="left: calc(23.5/480*100%); top: calc(1001.5/1460*100%); width: calc(357/480*100%); height: calc(293/1460*100%); border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;"></div>
+      <div class="photo-slot" id="s0" style="left: calc(85.5/480*100%); top: calc(48.5/1460*100%); width: calc(363/480*100%); height: calc(291/1460*100%); "></div>
+      <div class="photo-slot" id="s1" style="left: calc(54/480*100%); top: calc(365/1460*100%); width: calc(363/480*100%); height: calc(292/1460*100%); "></div>
+      <div class="photo-slot" id="s2" style="left: calc(92.5/480*100%); top: calc(682.5/1460*100%); width: calc(363/480*100%); height: calc(293/1460*100%); "></div>
+      <div class="photo-slot" id="s3" style="left: calc(23.5/480*100%); top: calc(1001.5/1460*100%); width: calc(357/480*100%); height: calc(293/1460*100%); "></div>
     </div>
     <img id="frame-img" src="FRAME.png" alt="프레임" />
   </div>
@@ -242,7 +242,7 @@
   }
 
   function drawShotFrame(ctx, w, h) {
-    if (shots.length >= 4) return; // 4컷 다 찍으면 프레임 안 그림
+    if (shots.length >= 4) return;
     const img = shotFrameImgs[shots.length];
     if (img && img.complete && img.naturalWidth) ctx.drawImage(img, 0, 0, w, h);
   }
@@ -262,10 +262,10 @@
   function captureFrame() {
     const w = video.videoWidth || 640, h = video.videoHeight || 360;
     hiddenCanvas.width = w; hiddenCanvas.height = h;
-    const currentIdx = shots.length; // push 전 인덱스
+    const currentIdx = shots.length; // push 전 인덱스 저장
     hc.save(); hc.translate(w, 0); hc.scale(-1, 1);
     hc.drawImage(video, 0, 0, w, h); hc.restore();
-    // 현재 컷 인덱스로 프레임 그리기
+    // 현재 컷 번호 기준으로 프레임 그리기 (push 전이라 정확함)
     const shotFrame = shotFrameImgs[currentIdx];
     if (shotFrame && shotFrame.complete && shotFrame.naturalWidth) {
       hc.drawImage(shotFrame, 0, 0, w, h);
@@ -277,8 +277,6 @@
 
     const dataURL = hiddenCanvas.toDataURL('image/jpeg', 0.92);
     shots.push(dataURL);
-    // 캡처 직후 다음 프레임으로 넘어가기 전에 오버레이 초기화
-    oc.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
 
     const idx = shots.length - 1;
     document.getElementById(`d${idx}`).className = 'dot done';
