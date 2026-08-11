@@ -135,10 +135,10 @@
 <div id="screen-result" class="screen">
   <div id="strip-container">
     <div id="photos-layer">
-      <div class="photo-slot" id="s0" style="left: calc(85.5/480*100%); top: calc(48.5/1460*100%); width: calc(363/480*100%); height: calc(291/1460*100%); "></div>
-      <div class="photo-slot" id="s1" style="left: calc(54/480*100%); top: calc(365/1460*100%); width: calc(363/480*100%); height: calc(292/1460*100%); "></div>
-      <div class="photo-slot" id="s2" style="left: calc(92.5/480*100%); top: calc(682.5/1460*100%); width: calc(363/480*100%); height: calc(293/1460*100%); "></div>
-      <div class="photo-slot" id="s3" style="left: calc(23.5/480*100%); top: calc(1001.5/1460*100%); width: calc(357/480*100%); height: calc(293/1460*100%); "></div>
+      <div class="photo-slot" id="s0" style="left:calc(91/480*100%); top:calc(44/1460*100%); width:calc(363/480*100%); height:calc(291/1460*100%);"></div>
+      <div class="photo-slot" id="s1" style="left:calc(50/480*100%); top:calc(359/1460*100%); width:calc(363/480*100%); height:calc(292/1460*100%);"></div>
+      <div class="photo-slot" id="s2" style="left:calc(99/480*100%); top:calc(675/1460*100%); width:calc(363/480*100%); height:calc(293/1460*100%);"></div>
+      <div class="photo-slot" id="s3" style="left:calc(14/480*100%); top:calc(995/1460*100%); width:calc(363/480*100%); height:calc(293/1460*100%);"></div>
     </div>
     <img id="frame-img" src="FRAME.png" alt="프레임" />
   </div>
@@ -169,10 +169,10 @@
 
   // 결과 화면 하트 슬롯 좌표 (frame.png 기준, 실측값)
   const SLOTS = [
-    { x: 85.5, y: 48.5,   w: 363, h: 291 },
-    { x: 54.0, y: 365.0,  w: 363, h: 292 },
-    { x: 92.5, y: 682.5,  w: 363, h: 293 },
-    { x: 23.5, y: 1001.5, w: 357, h: 293 },
+    { x: 91,  y: 44,  w: 363, h: 291 },
+    { x: 50,  y: 359, w: 363, h: 292 },
+    { x: 99,  y: 675, w: 363, h: 293 },
+    { x: 14,  y: 995, w: 363, h: 293 },
   ];
   const FRAME_W = 480, FRAME_H = 1460;
 
@@ -262,14 +262,9 @@
   function captureFrame() {
     const w = video.videoWidth || 640, h = video.videoHeight || 360;
     hiddenCanvas.width = w; hiddenCanvas.height = h;
-    const currentIdx = shots.length; // push 전 인덱스 저장
     hc.save(); hc.translate(w, 0); hc.scale(-1, 1);
     hc.drawImage(video, 0, 0, w, h); hc.restore();
-    // 현재 컷 번호 기준으로 프레임 그리기 (push 전이라 정확함)
-    const shotFrame = shotFrameImgs[currentIdx];
-    if (shotFrame && shotFrame.complete && shotFrame.naturalWidth) {
-      hc.drawImage(shotFrame, 0, 0, w, h);
-    }
+    // 결과물엔 카메라 영상만 캡처 (SHOT0_frame은 촬영 중 미리보기용이라 찍으면 안됨)
 
     const flash = document.getElementById('flash');
     flash.style.transition = 'opacity 0.05s'; flash.style.opacity = '0.9';
