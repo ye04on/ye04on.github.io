@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PHOTO BOOTH WITH HAWK</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #111;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .screen { display: none; flex-direction: column; align-items: center; width: 100%; min-height: 100vh; }
+    .screen.active { display: flex; }
+
+    /* INTRO */
+    #screen-intro {
+      justify-content: center;
+      gap: 32px;
+      padding: 40px 24px;
+      background:
+        repeating-linear-gradient(
+          -45deg,
+          rgba(255,255,255,0.25) 0px,
+          rgba(255,255,255,0.25) 2px,
+          transparent 2px,
+          transparent 14px
+        ),
+        linear-gradient(180deg, #ffd6dd 0%, #ff97a3 100%);
+    }
+    .intro-img { width: min(90vw, 70vh); max-width: 600px; height: auto; display: block; }
+    .btn-main {
+      padding: 14px 40px; border-radius: 999px;
+      background: #fff; color: #111;
+      font-size: 15px; font-weight: 600;
+      border: none; cursor: pointer; transition: opacity 0.15s;
+    }
+    .btn-main:hover { opacity: 0.85; }
+
+    /* SHOOT */
+    #screen-shoot { padding: 0; justify-content: flex-start; gap: 0; background: #000; }
+    #cam-wrap {
+      position: relative; width: 100%; max-width: 640px;
+      aspect-ratio: 16/9; background: #000; overflow: hidden;
+    }
+    video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: block; }
+    #overlay-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+    #countdown {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      font-size: 96px; font-weight: 700; color: #fff;
+      text-shadow: 0 2px 20px rgba(0,0,0,0.6); display: none; z-index: 10;
+    }
+    #flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 9; }
+    #dot-wrap { display: flex; gap: 10px; padding: 16px 0 8px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: #444; transition: background 0.2s; }
+    .dot.done { background: #fff; }
+    .dot.active { background: #aaa; }
+    #shoot-status { font-size: 13px; color: #888; padding-bottom: 12px; min-height: 20px; }
+    #shutter-btn {
+      width: 70px; height: 70px; border-radius: 50%;
+      border: 3px solid #fff; background: transparent;
+      cursor: pointer; position: relative; margin-bottom: 32px; transition: transform 0.1s;
+    }
+    #shutter-btn:active { transform: scale(0.94); }
+    #shutter-btn::after {
+      content: ''; position: absolute; inset: 6px;
+      border-radius: 50%; background: #fff;
+    }
+    #shutter-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    /* RESULT */
+    #screen-result {
+      padding: 32px 16px 48px;
+      gap: 24px; align-items: center;
+      background: #f7e8ea;
+      min-height: 100vh;
+    }
+    #strip-container {
+      position: relative;
+      width: 320px;
+      height: calc(320px * 1460 / 480);
+    }
+    #photos-layer { position: absolute; inset: 0; }
+    .photo-slot { position: absolute; overflow: hidden; }
+    .photo-slot img { width: 100%; height: 100%; object-fit: cover; }
+    #frame-img {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      pointer-events: none; z-index: 2;
+    }
+    .result-btns { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+    .btn-sub {
+      padding: 11px 24px; border-radius: 999px;
+      font-size: 14px; font-weight: 500;
+      border: 1.5px solid #c0a0a5; background: transparent; color: #7a4a50;
+      cursor: pointer; transition: border-color 0.15s;
+    }
+    .btn-sub:hover { border-color: #a07075; }
+    .btn-dl { border-color: #c0606a; background: #c0606a; color: #fff; }
+    .btn-dl:hover { opacity: 0.85; }
+  </style>
+</head>
+<body>
+
+<!-- INTRO -->
+<div id="screen-intro" class="screen active">
+  <img src="start.png" class="intro-img" alt="PHOTO BOOTH WITH HAWK" />
+  <button class="btn-main" id="start-btn">시작하기</button>
+</div>
+
+<!-- SHOOT -->
+<div id="screen-shoot" class="screen">
+  <div id="cam-wrap">
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="overlay-canvas"></canvas>
+    <div id="countdown"></div>
+    <div id="flash"></div>
+  </div>
+  <div id="dot-wrap">
+    <div class="dot active" id="d0"></div>
+    <div class="dot" id="d1"></div>
+    <div class="dot" id="d2"></div>
+    <div class="dot" id="d3"></div>
+  </div>
+  <div id="shoot-status">1번째 사진을 찍어보세요</div>
+  <button id="shutter-btn" disabled></button>
+</div>
+
+<!-- RESULT -->
+<div id="screen-result" class="screen">
+  <div id="strip-container">
+    <div id="photos-layer">
+      <div class="photo-slot" id="s0" style="left:calc(91/480*100%); top:calc(44/1460*100%); width:calc(363/480*100%); height:calc(291/1460*100%);"></div>
+      <div class="photo-slot" id="s1" style="left:calc(50/480*100%); top:calc(359/1460*100%); width:calc(363/480*100%); height:calc(292/1460*100%);"></div>
+      <div class="photo-slot" id="s2" style="left:calc(99/480*100%); top:calc(675/1460*100%); width:calc(363/480*100%); height:calc(293/1460*100%);"></div>
+      <div class="photo-slot" id="s3" style="left:calc(14/480*100%); top:calc(995/1460*100%); width:calc(363/480*100%); height:calc(293/1460*100%);"></div>
+    </div>
+    <img id="frame-img" src="FRAME.png" alt="프레임" />
+  </div>
+  <div class="result-btns">
+    <button class="btn-sub btn-dl" id="download-btn">💾 저장하기</button>
+    <button class="btn-sub" id="retry-btn">🔄 다시찍기</button>
+  </div>
+</div>
+
+<canvas id="hidden-canvas" style="display:none;"></canvas>
+
+<script>
+  const video = document.getElementById('video');
+  const overlayCanvas = document.getElementById('overlay-canvas');
+  const oc = overlayCanvas.getContext('2d');
+  const hiddenCanvas = document.getElementById('hidden-canvas');
+  const hc = hiddenCanvas.getContext('2d');
+
+  let stream, shots = [], shooting = false, animId;
+
+  // 컷별로 다르게 보여줄 프레임 이미지
+  const SHOT_FRAME_SRCS = ['SHOT0_frame_01.png', 'SHOT0_frame_02.png', 'SHOT0_frame_03.png', 'SHOT0_frame_04.png'];
+  const shotFrameImgs = SHOT_FRAME_SRCS.map(src => {
+    const img = new Image();
+    img.src = src;
+    return img;
+  });
+
+  // 결과 화면 하트 슬롯 좌표 (frame.png 기준, 실측값)
+  const SLOTS = [
+    { x: 91,  y: 44,  w: 363, h: 291 },
+    { x: 50,  y: 359, w: 363, h: 292 },
+    { x: 99,  y: 675, w: 363, h: 293 },
+    { x: 14,  y: 995, w: 363, h: 293 },
+  ];
+  const FRAME_W = 480, FRAME_H = 1460;
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  // 비율이 다른 이미지를 대상 영역에 꽉 채우면서(cover) 중앙 크롭해서 그리기
+  function drawCover(ctx, img, dx, dy, dw, dh) {
+    const ir = img.width / img.height, dr = dw / dh;
+    let sx, sy, sw, sh;
+    if (ir > dr) { sh = img.height; sw = sh * dr; sx = (img.width - sw) / 2; sy = 0; }
+    else { sw = img.width; sh = sw / dr; sx = 0; sy = (img.height - sh) / 2; }
+    ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
+  }
+
+  document.getElementById('start-btn').addEventListener('click', async () => {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+      video.srcObject = stream;
+      video.onloadedmetadata = () => {
+        overlayCanvas.width = video.videoWidth || 640;
+        overlayCanvas.height = video.videoHeight || 360;
+        startOverlay();
+        document.getElementById('shutter-btn').disabled = false;
+      };
+      showScreen('screen-shoot');
+    } catch (e) {
+      alert('카메라 접근이 거부됐어요.');
+    }
+  });
+
+  document.getElementById('shutter-btn').addEventListener('click', () => {
+    if (shooting || shots.length >= 4) return;
+    runCountdown();
+  });
+
+  document.getElementById('retry-btn').addEventListener('click', () => {
+    shots = [];
+    for (let i = 0; i < 4; i++) {
+      document.getElementById(`d${i}`).className = 'dot' + (i === 0 ? ' active' : '');
+      document.getElementById(`s${i}`).innerHTML = '';
+    }
+    document.getElementById('shoot-status').textContent = '1번째 사진을 찍어보세요';
+    document.getElementById('shutter-btn').disabled = false;
+    showScreen('screen-shoot');
+    startOverlay();
+    if (!stream || stream.getTracks()[0].readyState === 'ended') {
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false }).then(s => {
+        stream = s; video.srcObject = s;
+      });
+    }
+  });
+
+  document.getElementById('download-btn').addEventListener('click', downloadStrip);
+
+  function startOverlay() {
+    if (animId) cancelAnimationFrame(animId);
+    function loop() {
+      if (!video.videoWidth) { animId = requestAnimationFrame(loop); return; }
+      oc.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+      drawShotFrame(oc, overlayCanvas.width, overlayCanvas.height);
+      animId = requestAnimationFrame(loop);
+    }
+    loop();
+  }
+
+  function drawShotFrame(ctx, w, h) {
+    if (shots.length >= 4) return;
+    const img = shotFrameImgs[shots.length];
+    if (img && img.complete && img.naturalWidth) ctx.drawImage(img, 0, 0, w, h);
+  }
+
+  function runCountdown() {
+    shooting = true;
+    document.getElementById('shutter-btn').disabled = true;
+    const el = document.getElementById('countdown');
+    let n = 3; el.style.display = 'block'; el.textContent = n;
+    const iv = setInterval(() => {
+      n--;
+      if (n > 0) { el.textContent = n; }
+      else { clearInterval(iv); el.style.display = 'none'; captureFrame(); }
+    }, 900);
+  }
+
+  function captureFrame() {
+    const w = video.videoWidth || 640, h = video.videoHeight || 360;
+    hiddenCanvas.width = w; hiddenCanvas.height = h;
+    hc.save(); hc.translate(w, 0); hc.scale(-1, 1);
+    hc.drawImage(video, 0, 0, w, h); hc.restore();
+    // 결과물엔 카메라 영상만 캡처 (SHOT0_frame은 촬영 중 미리보기용이라 찍으면 안됨)
+
+    const flash = document.getElementById('flash');
+    flash.style.transition = 'opacity 0.05s'; flash.style.opacity = '0.9';
+    setTimeout(() => { flash.style.transition = 'opacity 0.3s'; flash.style.opacity = '0'; }, 80);
+
+    const dataURL = hiddenCanvas.toDataURL('image/jpeg', 0.92);
+    shots.push(dataURL);
+
+    const idx = shots.length - 1;
+    document.getElementById(`d${idx}`).className = 'dot done';
+    if (shots.length < 4) document.getElementById(`d${shots.length}`).className = 'dot active';
+
+    shooting = false;
+
+    if (shots.length < 4) {
+      const labels = ['', '2번째', '3번째', '4번째'];
+      document.getElementById('shoot-status').textContent = `${labels[shots.length]} 사진을 찍어보세요`;
+      document.getElementById('shutter-btn').disabled = false;
+    } else {
+      document.getElementById('shoot-status').textContent = '완성! 잠시만요...';
+      if (animId) cancelAnimationFrame(animId);
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      setTimeout(showResult, 400);
+    }
+  }
+
+  function showResult() {
+    shots.forEach((src, i) => {
+      const div = document.getElementById(`s${i}`);
+      div.innerHTML = '';
+      const img = document.createElement('img');
+      img.src = src; div.appendChild(img);
+    });
+    showScreen('screen-result');
+  }
+
+  function downloadStrip() {
+    const frameImg = new Image();
+    frameImg.src = 'FRAME.png';
+    frameImg.onload = () => {
+      const sc = document.createElement('canvas');
+      sc.width = FRAME_W; sc.height = FRAME_H;
+      const sctx = sc.getContext('2d');
+
+      Promise.all(shots.map((src, i) => new Promise(res => {
+        const img = new Image();
+        img.onload = () => {
+          const slot = SLOTS[i];
+          sctx.save();
+          // 하트 모양 클리핑
+          sctx.beginPath();
+          const rx = slot.w / 2, ry = slot.h / 2;
+          sctx.ellipse(slot.x + rx, slot.y + ry, rx, ry, 0, 0, Math.PI * 2);
+          sctx.clip();
+          // 비율 다른 사진이 눌리지 않도록 중앙 크롭(cover) 방식으로 그리기
+          drawCover(sctx, img, slot.x, slot.y, slot.w, slot.h);
+          sctx.restore();
+          res();
+        };
+        img.src = src;
+      }))).then(async () => {
+        sctx.drawImage(frameImg, 0, 0, FRAME_W, FRAME_H);
+
+        sc.toBlob(async (blob) => {
+          const file = new File([blob], 'life-four-cut.png', { type: 'image/png' });
+
+          // iOS Safari 등 Web Share API 지원 환경에서는 공유 시트로
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+              await navigator.share({ files: [file], title: 'PHOTO BOOTH WITH HAWK' });
+              return;
+            } catch (e) {
+              // 사용자가 취소했거나 실패한 경우 아래 기본 다운로드로 폴백
+            }
+          }
+          // PC / 안드로이드 등 기본 다운로드 방식
+          const a = document.createElement('a');
+          a.download = 'life-four-cut.png';
+          a.href = URL.createObjectURL(blob);
+          a.click();
+        }, 'image/png');
+      });
+    };
+  }
+</script>
+</body>
+</html>
